@@ -1,0 +1,94 @@
+﻿@page "/AddCompany"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+@inject MOWwithMudBlazor.Data.ApplicationDbContext _db
+@inject IJSRuntime _js
+
+
+<div style="background-color:lightblue">
+
+<div style="padding:30px;margin:20px">
+    <EditForm Model="@Company" OnValidSubmit="OnValidSubmit">
+<DataAnnotationsValidator/>
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudCard>
+            <MudCardContent>
+                <MudTextField Label="Company Name" HelperText="The Name Should not be more than 20 Char"  @bind-Value="Company.CompanyName" For="@(() => Company.CompanyName)"/>
+                <MudTextField Label="Company Location" HelperText="Enter The Location with Postal Code " Class="mt-3" @bind-Value="Company.Location" For="@(() => Company.Location)" InputType="InputType.Text"/>
+                <MudTextField Label="Company Phone Number" HelperText="Enter Phone Number with Country Key" Class="mt-3" @bind-Value="Company.PhoneNumber" For="@(() => Company.PhoneNumber)" InputType="InputType.Number"/>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add Company</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
+            @if (success)
+            {
+                <MudText Color="Color.Success">Success</MudText>
+            }
+            else
+            {
+                <MudText Color="@Color.Error">
+                    <ValidationSummary />
+                </MudText>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudText Typo="Typo.body2" Align="Align.Center">
+            Fill out the form correctly to see the success message.
+        </MudText>
+    </MudItem>
+
+</MudGrid>
+</EditForm>
+</div>
+
+
+
+
+
+
+
+
+<div style="margin:30px;padding:20px">
+    <AddProduct />
+</div>
+
+</div>
+
+
+
+
+
+@code {
+
+    bool success;
+    public CompaniesModel Company { get; set; } = new CompaniesModel();
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        var IsCompanyExistInDataBase = await _db.ComapniesTable.SingleOrDefaultAsync(a => a.CompanyName.ToLower() == Company.CompanyName.ToLower());
+        if (IsCompanyExistInDataBase is null)
+        {
+            await _db.ComapniesTable.AddAsync(Company);
+            await _db.SaveChangesAsync();
+            await _js.InvokeVoidAsync("alert", "the Company Has Been Added Successfuly");
+            success = true;
+            Company = new CompaniesModel();
+        }
+        else
+        {
+             await _js.InvokeVoidAsync("alert", "the Company Already Exists in the database");
+        }
+      
+    }
+
+}

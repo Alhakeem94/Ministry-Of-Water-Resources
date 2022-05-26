@@ -1,0 +1,225 @@
+﻿@page "/AddProduct"
+
+@inject ApplicationDbContext _db
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+@inject IJSRuntime _js
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment __webHostEnvironment
+ 
+
+
+<EditForm Model="@Product" OnValidSubmit="OnValidSubmit">
+<DataAnnotationsValidator/>
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudCard>
+            <MudCardContent>
+                <MudTextField Label="Product Name" HelperText="Enter Product Name"
+                              @bind-Value="Product.ProductName" For="@(() => Product.ProductName)"/>
+                <MudTextField Label="Price" Class="mt-3"
+                              @bind-Value="Product.Price" For="@(() => Product.Price)"/>
+                <MudTextField Label="Ram" HelperText="Enter The Ram" Class="mt-3"
+                              @bind-Value="Product.RAM" For="@(() => Product.RAM)" InputType="InputType.Text"/>
+                <MudTextField Label="Hard Disk" HelperText="Enter The Hard Disk" Class="mt-3"
+                              @bind-Value="Product.HardDisk" For="@(() => Product.HardDisk)" InputType="InputType.Text"/>
+                <MudTextField Label="Color" HelperText="Enter The Color"
+                              @bind-Value="Product.Color" For="@(() => Product.Color)"/>
+                <MudTextField Label="Graphic Card" HelperText="Enter The Graphic Card"
+                              @bind-Value="Product.GraphicCard" For="@(() => Product.GraphicCard)"/>
+                <MudSelect HelperText="Company Name" T="int" Label="Choose the Manifacturer" Variant="Variant.Text" @bind-Value="Product.CompanyId">
+                          @foreach (var item in ListOfCompanies)
+                          {
+                             <MudSelectItem  Value=item.Id >@item.CompanyName</MudSelectItem>
+                          }
+                </MudSelect>
+
+
+@*                Image Upload
+*@                <InputFile id="fileInput112" OnChange="OnInputFileProductPhoto" hidden multiple accept=".jpg, .jpeg, .png" />
+
+                <MudButton HtmlTag="label"
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            StartIcon="@Icons.Filled.CloudUpload"
+                            for="fileInput112">
+                    Upload Product Image
+                </MudButton>
+
+
+
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add Product</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
+            @if (success)
+            {
+                <MudText Color="Color.Success">Success</MudText>
+            }
+            else
+            {
+                <MudText Color="@Color.Error">
+                    <ValidationSummary />
+                </MudText>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudText Typo="Typo.body2" Align="Align.Center">
+            Fill out the form correctly to see the success message.
+        </MudText>
+    </MudItem>
+</MudGrid>
+</EditForm>
+
+
+@code {
+
+    bool success;
+    public ProductsModel Product { get; set; } = new ProductsModel();
+    public List<CompaniesModel> ListOfCompanies { get; set; } = new List<CompaniesModel>();
+
+    public List<string> ImagesPaths { get; set; }
+
+    public string ImagePath { get; set; } = "";
+    public string Message { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListOfCompanies = await _db.ComapniesTable.ToListAsync();
+    }
+
+
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        Product.ImagePath = ImagePath;
+        await _db.ProductsTable.AddAsync(Product);
+        await _db.SaveChangesAsync();
+        await _js.InvokeVoidAsync("alert", "The Product Has been Added To The DataBase");
+        success = true;
+        Product = new ProductsModel();
+    }
+
+
+   private async Task OnInputFileProductPhoto(InputFileChangeEventArgs e)
+    {
+        
+        if (ImagePath == "")
+        {
+            ImagePath = await InputImage(e);
+        }
+        else if (ImagePat h != "")
+        {
+            try
+            {
+                var path = $"{__webHostEnvironment.WebRootPath}\\{ImagePath}";
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    ImagePath = await InputImage(e);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Message = ex.Message;
+            }
+        }
+    }
+
+    private async Task<string> InputImage(InputFileChangeEventArgs e)
+    {
+            FileInfo fileInfo = new FileInfo(e.File.Name);
+            
+            var filename = Guid.NewGuid().ToString() +fileInfo.Name+ fileInfo.Extension;
+            var folderdirectory = $"{__webHostEnvironment.WebRootPath}\\Images";
+            var path = Path.Combine(__webHostEnvironment.WebRootPath, "Images", filename);
+
+            var memorystream = new MemoryStream();
+            await e.File.OpenReadStream().CopyToAsync(memorystream);
+
+            if (!Directory.Exists(folderdirectory))
+            {
+                Directory.CreateDirectory(folderdirectory);
+            }
+
+            await using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                memorystream.WriteTo(fs);
+            }
+
+            var fullpath = $"Images/{filename}";
+            return fullpath;
+        }
+
+
+  }
+
+      @*  <MudItem xs="12" sm="6" md="4">
+            <InputFile id="fileInput112" OnChange="OnInputFileProductPhoto" hidden multiple accept=".jpg, .jpeg, .png" />
+            <MudButton HtmlTag="label" Style="font-family:beIN"  Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Filled.CloudUpload" for="fileInput112">
+           اختر صورة الاستاذ
+           </MudButton>
+        </MudItem>
+
+
+
+
+
+    private async Task OnInputFileProductPhoto(InputFileChangeEventArgs e)
+    {
+        if (ImagePath == "")
+        {
+            ImagePath = await InputImage(e);
+        }
+        else if (ImagePath != "")
+        {
+            try
+            {
+                var path = $"{__webHostEnvironment.WebRootPath}\\{ImagePath}";
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    ImagePath = await InputImage(e);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Message = ex.Message;
+            }
+        }
+    }
+
+        private async Task<string> InputImage(InputFileChangeEventArgs e)
+        {
+            FileInfo fileInfo = new FileInfo(e.File.Name);
+            var filename = Guid.NewGuid().ToString() + fileInfo.Extension;
+            var folderdirectory = $"{__webHostEnvironment.WebRootPath}\\images";
+            var path = Path.Combine(__webHostEnvironment.WebRootPath, "images", filename);
+
+            var memorystream = new MemoryStream();
+            await e.File.OpenReadStream().CopyToAsync(memorystream);
+
+            if (!Directory.Exists(folderdirectory))
+            {
+                Directory.CreateDirectory(folderdirectory);
+            }
+
+            await using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                memorystream.WriteTo(fs);
+            }
+
+            var fullpath = $"images/{filename}";
+            return fullpath;
+        }
+
+
+*@

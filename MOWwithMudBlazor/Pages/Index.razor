@@ -1,0 +1,55 @@
+﻿@page "/"
+@using Microsoft.EntityFrameworkCore
+
+@inject ApplicationDbContext _db
+ 
+<button class="btn btn-primary form-control">Add</button>
+
+<div class="row row-cols-lg-4 row-cols-md-3 row-cols-sm-2" style="margin:20px">
+
+    @foreach (var item in ListOfProducts)
+    {
+          <MudCard Style="margin:10px">
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudAvatar Color="Color.Secondary">I</MudAvatar>
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.body1">@item.ProductName</MudText>
+                    <MudText Typo="Typo.body2">@item.Company.CompanyName </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardMedia Image="@item.ImagePath" Height="200" />
+            <MudCardContent>
+                <MudText Typo="Typo.body2">This photo was taken in a small village in Istra Croatia.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Default" />
+                <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+            </MudCardActions>
+        </MudCard>
+
+    }
+
+    </div>
+
+
+
+
+@code{
+
+	public List<ProductsModel> ListOfProducts { get; set; } = new List<ProductsModel>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		ListOfProducts = await _db.ProductsTable.Include(a=>a.Company).ToListAsync();
+	}
+
+
+
+
+
+}
